@@ -1,1 +1,668 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine à Sous</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: linear-gradient(135deg, #4A0E4E 0%, #81689D 50%, #C8B8DB 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '🎭';
+            position: fixed;
+            font-size: 15em;
+            opacity: 0.05;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .container {
+            background: linear-gradient(145deg, #2D1B3D, #5C3D6F);
+            border-radius: 25px;
+            padding: 20px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.6);
+            text-align: center;
+            border: 5px solid #FFD700;
+            max-width: 450px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            color: #FFD700;
+            font-size: clamp(1.5em, 5vw, 2em);
+            margin-bottom: 15px;
+            text-shadow: 3px 3px 8px rgba(0,0,0,0.7);
+            font-style: italic;
+        }
+
+        .credits {
+            background: linear-gradient(145deg, #1a1a2e, #0f0f1e);
+            color: #FFD700;
+            padding: 12px 20px;
+            border-radius: 15px;
+            font-size: clamp(1.2em, 4vw, 1.5em);
+            margin-bottom: 20px;
+            font-family: 'Georgia', serif;
+            border: 3px solid #9D50BB;
+            box-shadow: 0 0 20px rgba(157, 80, 187, 0.5);
+        }
+
+        .slots-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .slot-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            flex: 1;
+            min-width: 90px;
+            max-width: 120px;
+        }
+
+        .slot {
+            background: linear-gradient(145deg, #fff, #f0e6ff);
+            border: 4px solid #9D50BB;
+            border-radius: 15px;
+            width: 100%;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(2.5em, 8vw, 3.5em);
+            box-shadow: inset 0 5px 15px rgba(157, 80, 187, 0.3), 0 0 15px rgba(255, 215, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .stop-button {
+            background: linear-gradient(145deg, #9D50BB, #7B2D9E);
+            border: 3px solid #FFD700;
+            padding: 8px 15px;
+            border-radius: 10px;
+            font-size: clamp(0.85em, 3vw, 1em);
+            color: #FFD700;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            width: 100%;
+        }
+
+        .stop-button:hover:not(:disabled) {
+            background: linear-gradient(145deg, #7B2D9E, #9D50BB);
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+        }
+
+        .stop-button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .slot.spinning {
+            animation: spin 0.1s linear infinite;
+        }
+
+        @keyframes spin {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #spinButton {
+            background: linear-gradient(145deg, #FF4500, #FF6347);
+            border: none;
+            padding: 20px 60px;
+            border-radius: 15px;
+            font-size: 1.8em;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+            border: 4px solid #FFD700;
+        }
+
+        #spinButton:hover:not(:disabled) {
+            background: linear-gradient(145deg, #FF6347, #FF4500);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.4);
+        }
+
+        #spinButton:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .message {
+            margin-top: 20px;
+            font-size: 1.5em;
+            color: #FFD700;
+            font-weight: bold;
+            min-height: 40px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .message.win {
+            animation: pulse 0.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .reset-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #9D50BB;
+        }
+
+        .reset-button {
+            background: linear-gradient(145deg, #5C3D6F, #7B2D9E);
+            border: 3px solid #FFD700;
+            padding: 10px 25px;
+            border-radius: 10px;
+            font-size: clamp(1em, 3.5vw, 1.1em);
+            color: #FFD700;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+
+        .reset-button:hover {
+            background: linear-gradient(145deg, #7B2D9E, #5C3D6F);
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, #2D1B3D, #5C3D6F);
+            border: 5px solid #FFD700;
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 90%;
+            width: 350px;
+            box-shadow: 0 0 30px rgba(157, 80, 187, 0.8);
+        }
+
+        .modal-content h2 {
+            color: #FFD700;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: clamp(1.3em, 5vw, 1.8em);
+            font-style: italic;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 12px;
+            border: 3px solid #9D50BB;
+            border-radius: 8px;
+            font-size: clamp(1em, 4vw, 1.1em);
+            margin-bottom: 15px;
+            text-align: center;
+            background: #f0e6ff;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .modal-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: clamp(0.9em, 3.5vw, 1em);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-confirm {
+            background: #9D50BB;
+            color: #FFD700;
+            border: 2px solid #FFD700;
+        }
+
+        .btn-cancel {
+            background: #5C3D6F;
+            color: #fff;
+            border: 2px solid #FFD700;
+        }
+
+        .settings-page {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            overflow-y: auto;
+            padding: 20px;
+            z-index: 2000;
+        }
+
+        .settings-page.active {
+            display: block;
+        }
+
+        .settings-container {
+            background: linear-gradient(145deg, #8B0000, #CD5C5C);
+            border: 8px solid #FFD700;
+            border-radius: 30px;
+            padding: 40px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .settings-container h2 {
+            color: #FFD700;
+            font-size: 2em;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .symbol-control {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid #FFD700;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .symbol-control label {
+            color: #FFD700;
+            font-size: 1.5em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .symbol-control input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #FFD700;
+            outline: none;
+        }
+
+        .symbol-control .value-display {
+            color: #fff;
+            font-size: 1.2em;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .settings-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .settings-buttons button {
+            padding: 15px 30px;
+            border: 3px solid #FFD700;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-save {
+            background: #00FF00;
+            color: #000;
+        }
+
+        .btn-back {
+            background: #FF4500;
+            color: #fff;
+        }
+
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 Carnaval de Venise 🎭</h1>
+        
+        <div class="credits">
+            CRÉDITS: <span id="credits">100</span>
+        </div>
+
+        <div class="slots-container">
+            <div class="slot-wrapper">
+                <div class="slot" id="slot1">🎭</div>
+                <button class="stop-button" id="stopButton1" onclick="stopSlot(0)" disabled>STOP</button>
+            </div>
+            <div class="slot-wrapper">
+                <div class="slot" id="slot2">🎪</div>
+                <button class="stop-button" id="stopButton2" onclick="stopSlot(1)" disabled>STOP</button>
+            </div>
+            <div class="slot-wrapper">
+                <div class="slot" id="slot3">🦚</div>
+                <button class="stop-button" id="stopButton3" onclick="stopSlot(2)" disabled>STOP</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="spinButton" onclick="spin()">TOURNER</button>
+        </div>
+
+        <div class="message" id="message"></div>
+
+        <div class="reset-section">
+            <button class="reset-button" onclick="openResetModal()">🔄 Réinitialiser</button>
+        </div>
+    </div>
+
+    <!-- Modal de mot de passe -->
+    <div class="modal" id="passwordModal">
+        <div class="modal-content">
+            <h2>Mot de passe requis</h2>
+            <input type="password" id="passwordInput" placeholder="Entrez le mot de passe">
+            <div class="modal-buttons">
+                <button class="btn-confirm" onclick="checkPassword()">Valider</button>
+                <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page de paramètres -->
+    <div class="settings-page" id="settingsPage">
+        <div class="settings-container">
+            <h2>⚙️ PARAMÈTRES DE TRICHE ⚙️</h2>
+            
+            <div class="symbol-control">
+                <label>
+                    <span>🎭 Masque</span>
+                </label>
+                <input type="range" id="weight0" min="0" max="20" value="10" oninput="autoSaveSettings(0)">
+                <div class="value-display" id="display0">Probabilité: 10</div>
+            </div>
+
+            <div class="symbol-control">
+                <label>
+                    <span>🎪 Carnaval</span>
+                </label>
+                <input type="range" id="weight1" min="0" max="20" value="10" oninput="autoSaveSettings(1)">
+                <div class="value-display" id="display1">Probabilité: 10</div>
+            </div>
+
+            <div class="symbol-control">
+                <label>
+                    <span>🦚 Paon</span>
+                </label>
+                <input type="range" id="weight2" min="0" max="20" value="10" oninput="autoSaveSettings(2)">
+                <div class="value-display" id="display2">Probabilité: 10</div>
+            </div>
+
+            <div class="symbol-control">
+                <label>
+                    <span>👑 Couronne</span>
+                </label>
+                <input type="range" id="weight3" min="0" max="20" value="10" oninput="autoSaveSettings(3)">
+                <div class="value-display" id="display3">Probabilité: 10</div>
+            </div>
+
+            <div class="symbol-control">
+                <label>
+                    <span>🎨 Art</span>
+                </label>
+                <input type="range" id="weight4" min="0" max="20" value="10" oninput="autoSaveSettings(4)">
+                <div class="value-display" id="display4">Probabilité: 10</div>
+            </div>
+
+            <div class="symbol-control">
+                <label>
+                    <span>💎 Diamant</span>
+                </label>
+                <input type="range" id="weight5" min="0" max="20" value="10" oninput="autoSaveSettings(5)">
+                <div class="value-display" id="display5">Probabilité: 10</div>
+            </div>
+
+            <div class="symbol-control">
+                <label>
+                    <span>🌹 Rose</span>
+                </label>
+                <input type="range" id="weight6" min="0" max="20" value="10" oninput="autoSaveSettings(6)">
+                <div class="value-display" id="display6">Probabilité: 10</div>
+            </div>
+
+            <div class="settings-buttons">
+                <button class="btn-back" onclick="closeSettings()">🚪 Retour</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const symbols = ['🎭', '🎪', '🦚', '👑', '🎨', '💎', '🌹'];
+        let symbolWeights = [10, 10, 10, 10, 10, 10, 10]; // Probabilités initiales
+
+        let credits = 100;
+        let isSpinning = false;
+        let spinningSlots = [true, true, true];
+        let results = ['', '', ''];
+        let spinIntervals = [null, null, null];
+
+        function updateDisplay() {
+            document.getElementById('credits').textContent = credits;
+        }
+
+        // Fonction pour obtenir un symbole aléatoire pondéré
+        function getWeightedRandomSymbol() {
+            const totalWeight = symbolWeights.reduce((sum, weight) => sum + weight, 0);
+            let random = Math.random() * totalWeight;
+            
+            for (let i = 0; i < symbols.length; i++) {
+                random -= symbolWeights[i];
+                if (random <= 0) {
+                    return symbols[i];
+                }
+            }
+            return symbols[0];
+        }
+
+        function spin() {
+            if (isSpinning) return;
+
+            // Vérifier si le joueur a assez de crédits
+            if (credits <= 0) {
+                document.getElementById('message').textContent = '❌ Crédits insuffisants! Réinitialisez le jeu.';
+                return;
+            }
+
+            isSpinning = true;
+            spinningSlots = [true, true, true];
+            results = ['', '', ''];
+            
+            document.getElementById('message').textContent = '';
+            document.getElementById('spinButton').disabled = true;
+
+            const slots = [
+                document.getElementById('slot1'),
+                document.getElementById('slot2'),
+                document.getElementById('slot3')
+            ];
+
+            const stopButtons = [
+                document.getElementById('stopButton1'),
+                document.getElementById('stopButton2'),
+                document.getElementById('stopButton3')
+            ];
+
+            // Activer tous les boutons STOP
+            stopButtons.forEach(btn => btn.disabled = false);
+
+            // Démarrer l'animation de rotation pour chaque roulette
+            slots.forEach((slot, index) => {
+                slot.classList.add('spinning');
+                spinIntervals[index] = setInterval(() => {
+                    slot.textContent = getWeightedRandomSymbol();
+                }, 100);
+            });
+        }
+
+        function stopSlot(index) {
+            if (!spinningSlots[index]) return;
+
+            spinningSlots[index] = false;
+            
+            const slot = document.getElementById(`slot${index + 1}`);
+            const stopButton = document.getElementById(`stopButton${index + 1}`);
+            
+            // Arrêter l'animation
+            clearInterval(spinIntervals[index]);
+            slot.classList.remove('spinning');
+            
+            // Fixer un symbole aléatoire pondéré
+            results[index] = getWeightedRandomSymbol();
+            slot.textContent = results[index];
+            
+            // Désactiver le bouton
+            stopButton.disabled = true;
+
+            // Vérifier si toutes les roulettes sont arrêtées
+            if (!spinningSlots[0] && !spinningSlots[1] && !spinningSlots[2]) {
+                checkWin();
+            }
+        }
+
+        function checkWin() {
+            const messageEl = document.getElementById('message');
+            
+            if (results[0] === results[1] && results[1] === results[2]) {
+                credits += 50;
+                messageEl.textContent = `🎉 VICTOIRE! +50 crédits! 🎉`;
+                messageEl.classList.add('win');
+                
+                setTimeout(() => {
+                    messageEl.classList.remove('win');
+                }, 3000);
+            } else {
+                credits -= 10;
+                messageEl.textContent = '😔 Perdu... Retentez votre chance!';
+                
+                if (credits <= 0) {
+                    credits = 0;
+                    messageEl.textContent = '💔 Game Over! Plus de crédits. Réinitialisez le jeu.';
+                }
+            }
+
+            updateDisplay();
+            isSpinning = false;
+            document.getElementById('spinButton').disabled = false;
+        }
+
+        // Gestion du modal de mot de passe
+        function openResetModal() {
+            document.getElementById('passwordModal').classList.add('active');
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('passwordInput').focus();
+        }
+
+        function closeModal() {
+            document.getElementById('passwordModal').classList.remove('active');
+        }
+
+        function checkPassword() {
+            const password = document.getElementById('passwordInput').value;
+            
+            if (password === 'lejeu') {
+                // Réinitialiser le jeu SANS réinitialiser les paramètres de triche
+                credits = 100;
+                updateDisplay();
+                document.getElementById('message').textContent = '✅ Jeu réinitialisé!';
+                closeModal();
+            } else if (password === 'tricheur') {
+                // Ouvrir la page de paramètres
+                closeModal();
+                document.getElementById('settingsPage').classList.add('active');
+                // Charger les valeurs actuelles
+                symbolWeights.forEach((weight, index) => {
+                    document.getElementById(`weight${index}`).value = weight;
+                    document.getElementById(`display${index}`).textContent = `Probabilité: ${weight}`;
+                });
+            } else {
+                alert('❌ Mot de passe incorrect!');
+            }
+        }
+
+        // Permettre la validation avec la touche Entrée
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkPassword();
+                }
+            });
+        });
+
+        // Gestion de la page de paramètres
+        function autoSaveSettings(index) {
+            const value = document.getElementById(`weight${index}`).value;
+            document.getElementById(`display${index}`).textContent = `Probabilité: ${value}`;
+            // Sauvegarde automatique
+            symbolWeights[index] = parseInt(value);
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsPage').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
