@@ -382,7 +382,7 @@
         <h1>🎭 Carnaval de Venise 🎭</h1>
         
         <div class="credits">
-            CRÉDITS: <span id="credits">100</span>
+            CRÉDITS: <span id="credits">0</span>
         </div>
 
         <div class="slots-container">
@@ -404,7 +404,7 @@
             <button id="spinButton" onclick="spin()">TOURNER</button>
         </div>
 
-        <div class="message" id="message"></div>
+        <div class="message" id="message">⚠️ Réinitialisez pour commencer à jouer!</div>
 
         <div class="reset-section">
             <button class="reset-button" onclick="openResetModal()">🔄 Réinitialiser</button>
@@ -492,9 +492,9 @@
 
     <script>
         const symbols = ['🎭', '🎪', '🦚', '👑', '🎨', '💎', '🌹'];
-        let symbolWeights = [10, 10, 10, 10, 10, 10, 10]; // Probabilités initiales
+        let symbolWeights = [10, 10, 10, 10, 10, 10, 10];
 
-        let credits = 100;
+        let credits = 0; // Commence à 0
         let isSpinning = false;
         let spinningSlots = [true, true, true];
         let results = ['', '', ''];
@@ -504,7 +504,6 @@
             document.getElementById('credits').textContent = credits;
         }
 
-        // Fonction pour obtenir un symbole aléatoire pondéré
         function getWeightedRandomSymbol() {
             const totalWeight = symbolWeights.reduce((sum, weight) => sum + weight, 0);
             let random = Math.random() * totalWeight;
@@ -521,7 +520,6 @@
         function spin() {
             if (isSpinning) return;
 
-            // Vérifier si le joueur a assez de crédits
             if (credits <= 0) {
                 document.getElementById('message').textContent = '❌ Crédits insuffisants! Réinitialisez le jeu.';
                 return;
@@ -546,10 +544,8 @@
                 document.getElementById('stopButton3')
             ];
 
-            // Activer tous les boutons STOP
             stopButtons.forEach(btn => btn.disabled = false);
 
-            // Démarrer l'animation de rotation pour chaque roulette
             slots.forEach((slot, index) => {
                 slot.classList.add('spinning');
                 spinIntervals[index] = setInterval(() => {
@@ -566,18 +562,14 @@
             const slot = document.getElementById(`slot${index + 1}`);
             const stopButton = document.getElementById(`stopButton${index + 1}`);
             
-            // Arrêter l'animation
             clearInterval(spinIntervals[index]);
             slot.classList.remove('spinning');
             
-            // Fixer un symbole aléatoire pondéré
             results[index] = getWeightedRandomSymbol();
             slot.textContent = results[index];
             
-            // Désactiver le bouton
             stopButton.disabled = true;
 
-            // Vérifier si toutes les roulettes sont arrêtées
             if (!spinningSlots[0] && !spinningSlots[1] && !spinningSlots[2]) {
                 checkWin();
             }
@@ -609,7 +601,6 @@
             document.getElementById('spinButton').disabled = false;
         }
 
-        // Gestion du modal de mot de passe
         function openResetModal() {
             document.getElementById('passwordModal').classList.add('active');
             document.getElementById('passwordInput').value = '';
@@ -624,16 +615,13 @@
             const password = document.getElementById('passwordInput').value;
             
             if (password === 'lejeu') {
-                // Réinitialiser le jeu SANS réinitialiser les paramètres de triche
                 credits = 100;
                 updateDisplay();
-                document.getElementById('message').textContent = '✅ Jeu réinitialisé!';
+                document.getElementById('message').textContent = '✅ Jeu réinitialisé! Vous avez 100 crédits!';
                 closeModal();
             } else if (password === 'tricheur') {
-                // Ouvrir la page de paramètres
                 closeModal();
                 document.getElementById('settingsPage').classList.add('active');
-                // Charger les valeurs actuelles
                 symbolWeights.forEach((weight, index) => {
                     document.getElementById(`weight${index}`).value = weight;
                     document.getElementById(`display${index}`).textContent = `Probabilité: ${weight}`;
@@ -643,7 +631,6 @@
             }
         }
 
-        // Permettre la validation avec la touche Entrée
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('passwordInput').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
@@ -652,11 +639,9 @@
             });
         });
 
-        // Gestion de la page de paramètres
         function autoSaveSettings(index) {
             const value = document.getElementById(`weight${index}`).value;
             document.getElementById(`display${index}`).textContent = `Probabilité: ${value}`;
-            // Sauvegarde automatique
             symbolWeights[index] = parseInt(value);
         }
 
